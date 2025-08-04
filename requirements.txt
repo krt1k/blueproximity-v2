@@ -1,0 +1,5 @@
+# This script relies on system packages, not pip packages.
+# Please install them using your distribution's package manager.
+#
+# For Debian/Ubuntu:
+# sudo apt install python3-dbus python3-gi

@@ -21,8 +21,10 @@ import threading
 import subprocess
 import dbus
 import logging
+from logging.handlers import TimedRotatingFileHandler
 import signal
 import sys
+import os
 from gi.repository import GLib
 from dbus.mainloop.glib import DBusGMainLoop
 
@@ -31,13 +33,14 @@ CONFIG = {
     'devices': {
         # Add your device MAC addresses here
         # Find them using: bluetoothctl scan on
-        'iPhone': '78:02:8B:CE:F6:DF',        # Your iPhone MAC
+        'iPhone': '78:44:8B:CE:H1:DI',        # Your iPhone MAC
+        'ULT-WEAR': '00:A4:0ZC:EC:2B:6B',        # Your ULT-WEAR MAC
         # 'Android': 'YY:YY:YY:YY:YY:YY'        # Add an Android MAC if needed
     },
     # --- IMPORTANT: Adjust these based on your environment ---
     # A stronger signal has a higher RSSI (e.g., -40 is stronger than -70)
-    'unlock_distance': -20,  # Lock will be disabled if RSSI is stronger (higher) than this
-    'lock_distance': -30,    # Lock will be enabled if RSSI is weaker (lower) than this
+    'unlock_distance': -10,  # Lock will be disabled if RSSI is stronger (higher) than this
+    'lock_distance': -15,    # Lock will be enabled if RSSI is weaker (lower) than this
     
     'scan_interval': 5,      # Seconds between scans
     'lock_timeout': 15,      # Seconds of being "away" before locking
@@ -69,12 +72,29 @@ class BluetoothProximityMonitor:
         
     def setup_logging(self):
         level = logging.DEBUG if CONFIG['debug_mode'] else logging.INFO
-        logging.basicConfig(
-            level=level,
-            format='%(asctime)s - %(levelname)s - %(message)s',
-            handlers=[logging.StreamHandler(sys.stdout)]
-        )
+        
+        # Create logs directory if it doesn't exist
+        log_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'logs')
+        if not os.path.exists(log_dir):
+            os.makedirs(log_dir)
+        log_file_path = os.path.join(log_dir, 'proximity.log')
+
+        # Configure logger
         self.logger = logging.getLogger(__name__)
+        self.logger.setLevel(level)
+        formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+
+        # Console handler
+        stream_handler = logging.StreamHandler(sys.stdout)
+        stream_handler.setFormatter(formatter)
+        self.logger.addHandler(stream_handler)
+
+        # File handler with 7-day rotation
+        file_handler = TimedRotatingFileHandler(
+            log_file_path, when='midnight', interval=1, backupCount=7
+        )
+        file_handler.setFormatter(formatter)
+        self.logger.addHandler(file_handler)
         
     def signal_handler(self, signum, frame):
         self.logger.info(f"Received signal {signum}, shutting down...")
@@ -131,12 +151,14 @@ class BluetoothProximityMonitor:
     def handle_device_proximity(self, device_name, mac_address):
         """More robust proximity logic based on state transitions."""
         rssi = self.get_device_rssi(mac_address)
-        
+        if rssi is None:
+            self.logger.debug(f"{device_name} has no valid RSSI; skipping state update.")
+            return
         # Determine the current presence based on RSSI
-        is_currently_present = rssi is not None and rssi >= CONFIG['lock_distance']
+        is_currently_present = rssi >= CONFIG['lock_distance']
         
         # Get the last known state, default to the current state if unknown
-        last_known_state = self.device_is_present.get(device_name, is_currently_present)
+        last_known_state = self.device_is_present.get(device_name, True)
         
         if is_currently_present != last_known_state:
             # State has changed!
