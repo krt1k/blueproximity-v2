@@ -1,4 +1,4 @@
-# Custom BlueProximity for Linux
+# BlueProximity v2 for Linux
 
 A modern Python script to automatically lock and unlock your Linux desktop based on the proximity of your Bluetooth devices (phone, headphones, etc.). This is a replacement for the deprecated BlueProximity application, designed for modern Ubuntu/Debian-based systems.
 
