@@ -8,7 +8,7 @@ A modern Python script to automatically lock and unlock your Linux desktop based
 - **Auto Lock/Unlock**: Locks the screen when all monitored devices go out of range and unlocks when one comes back.
 - **Multi-Device Support**: Monitor multiple devices simultaneously (e.g., your phone and your headphones).
 - **Configurable**: Easily adjust distance thresholds, timeouts, and other settings.
-- **Rotating Logs**: Keeps 7 days of logs at `/path/to/your/repo/logs/blueproximity-<date>.log`.
+- **Rotating Logs**: Keeps 7 days of logs at `/full/path/to/your/blueproximity-v2/logs/blueproximity-<date>.log`.
 
 ## Prerequisites
 
